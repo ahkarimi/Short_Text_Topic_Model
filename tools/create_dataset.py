@@ -14,9 +14,9 @@ normalizer = Normalizer().normalize
 lemmatizer = Lemmatizer().lemmatize
 
 # Retrieved from https://github.com/kharazi/persian-stopwords
-stopwords = set(open('stop_words/stop_words.txt', encoding='utf8').read().splitlines())
+stopwords = set(open('data/stop_words.txt', encoding='utf8').read().splitlines())
 # Retrieved from https://github.com/amirshnll/Persian-Swear-Words
-swearing_words = set(open('stop_words/swear_words.txt', encoding='utf8').read().splitlines())
+swearing_words = set(open('data/swear_words.txt', encoding='utf8').read().splitlines())
 
 bad_hashtags = set(['تا_آخوند_کفن_نشود_این_وطن_وطن_نشود',
 'ایران_را_پس_میگیریم',
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     parser.add_argument("--until", default="2022-02-10", type=str)
     parser.add_argument("--since", default="2019-06-01", type=str)
     parser.add_argument("--with-replies", default=False, type=bool)
-    parser.add_argument("--hashtags", default='stop_words/local_hashtags.json')
+    parser.add_argument("--hashtags", default='data/local_hashtags.json')
     args = parser.parse_args()
     print(args)
     main(args)

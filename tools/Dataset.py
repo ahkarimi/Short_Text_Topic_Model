@@ -4,7 +4,9 @@ Dataset Module to load custom datasets
 
 from operator import index
 from textwrap import indent
-import numpy as np
+#import numpy as np
+import os
+import pandas as pd
 
 
 class Dataset:
@@ -34,43 +36,74 @@ class Dataset:
         self.test_labels = data['test_labels']
         self.dev_labels = data['dev_labels']
 
-    def load_data(self, path:str, encoding:str) -> None:
+    def load_data(self, path:str, encoding:str) -> dict:
         data = {
-            'train_corpus' : [],
-            'test_corpus' : [],
-            'dev_corpus' : [],
-            'train_labels' : [],
-            'test_labels' : [],
-            'dev_labels' : []
+            'train_corpus': [],
+            'test_corpus': [],
+            'dev_corpus': [],
+            'train_labels': [],
+            'test_labels': [],
+            'dev_labels': []
         }
+        
+        try:
+            df = pd.read_csv(f'{path}/data.tsv', delimiter='\t', encoding=encoding)
+            
+            train = df[df['split'] == 'train']
+            test = df[df['split'] == 'test']
+            dev = df[df['split'] == 'dev']
+            
+            data['train_corpus'].extend(train['text'])
+            data['test_corpus'].extend(test['text'])
+            data['dev_corpus'].extend(dev['text'])
+            
+            data['train_labels'].extend(train['label'])
+            data['test_labels'].extend(test['label'])
+            data['dev_labels'].extend(dev['label'])
+            
+            return data
+        
+        except FileNotFoundError as e:
+            print(f"File not found: {e}")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
-        with open(f'{path}/data.tsv', 'r', encoding=encoding) as f:
-            lines = f.readlines()
-            for line in lines:
-                _ = line.split('\t')
-                _slice = _[1]
-                if len(_) == 3:
-                    try:
-                        data[f'{_slice}_corpus'].append(_[0])
-                        data[f'{_slice}_labels'].append(_[2])
-                    except Exception:
-                        print(f'{_slice} is not in [train, test, dev]...')
-                elif len(_) == 2:
-                    try:
-                        data[f'{_slice}_corpus'].append(_[0])
-                    except Exception:
-                        print(f'{_slice} is not in [train, test, dev]...')
-                else:
-                    raise Exception('data file must have at least 2 and at most 3 columns...')
-        return data
 
     def load_vocab(self, path:str, encoding:str) -> None:
         self.vocab = ['UNK']
-        with open(f'{path}/vocab.txt', 'r', encoding=encoding) as f:
-            lines = f.readlines()
-            for line in lines:
-                _ = line.split()
-                self.vocab.append(_[0])
+        file_path = f'{path}/vocab.txt'
+        
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding=encoding) as f:
+                lines = f.readlines()
+                for line in lines:
+                    _ = line.split()
+                    self.vocab.append(_[0])
+        else:
+            try:
+                df = pd.read_csv(f'{path}/data.tsv', delimiter='\t', encoding=encoding)
+                text_column_name = 'text'
+
+                # Check if the specified text column exists in the DataFrame
+                if text_column_name not in df.columns:
+                    raise ValueError(f"'{text_column_name}' column not found in the DataFrame.")
+                    
+                text_column = df[text_column_name]
+                
+                vocab_set = set()
+
+                for text in text_column:
+                    if pd.notna(text):  # Check for non-null values
+                        words = text.split()
+                        vocab_set.update(words)
+
+                vocab_list = sorted(list(vocab_set))
+                self.vocab = vocab_list
+            
+            except FileNotFoundError as e:
+                print(f"File not found: {e}")
+            except Exception as e:
+                print(f"An error occurred: {str(e)}")
     
     def count_words(self):
         self.words_count = {}

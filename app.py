@@ -4,8 +4,14 @@ from pydantic import BaseModel
 from typing import List
 from tools.Dataset import Dataset
 import subprocess
+import os
 
 app = FastAPI()
+
+DATA_FOLDER = "data"
+
+# Ensure the upload folder exists
+os.makedirs(DATA_FOLDER, exist_ok=True)
 
 # Create an instance of the Dataset class to handle dataset loading
 dataset = None
@@ -14,30 +20,51 @@ dataset = None
 class Hashtags(BaseModel):
    hashtags: List[str]
 
-# Feature One: Upload a txt file containing hashtags and create a dataset
-@app.post("/upload/")
-async def create_dataset(file: UploadFile = File(...)):
+# Feature One: Upload a txt file containing hashtags and scrape a dataset
+@app.post("/scrape_data/")
+async def scrape_dataset(file: UploadFile = File(...)):
     global dataset
-
-    # Implement the logic to create a dataset from the uploaded file and hashtags
-    # Example: You can save the file, preprocess it, and create the dataset
 
     try:
         # Save the uploaded file
-        with open('stop_words/hashtags.txt', 'wb') as f:
+        with open('data/hashtags.txt', 'wb') as f:
             file_data = file.file.read()
             f.write(file_data)
 
-        # Call your create_dataset.py script using subprocess
-        subprocess.run(['python', 'tools/create_dataset.py', '--hashtags', 'stop_words/local_hashtags.json'])
+        subprocess.run(['python', 'tools/create_dataset.py', '--hashtags', 'data/local_hashtags.json'])
 
-        # Load the newly created dataset using your Dataset class
-        # dataset = Dataset("path_to_your_data_folder")
-        return {"message": "Dataset created successfully"}
+        return {"message": "Dataset scraped successfully"}
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
-# ...
+
+# Feature One: Upload a txt file containing hashtags and create a dataset
+@app.post("/upload_data/")
+async def create_dataset(file: UploadFile = File(...)):
+    global dataset
+
+    try:
+
+        # Determine the file format (TSV) based on the file extension
+        file_extension = file.filename.split(".")[-1].lower()
+        if file_extension != "tsv":
+            return HTTPException(status_code=400, detail="Unsupported file format (Please upload a tsv file)")
+
+        file_path = os.path.join(DATA_FOLDER, 'data.tsv')
+    
+        # Save the uploaded file
+        with open(file_path, 'wb') as f:
+            f.write(file.file.read())
+
+        # Load the newly created dataset using your Dataset class
+        dataset = Dataset(DATA_FOLDER)
+        return {"message": "Dataset created successfully"}
+    
+    except Exception as e:
+        return HTTPException(status_code=500, detail=str(e))
+
+
+
 
 if __name__ == "__main__":
     import uvicorn
