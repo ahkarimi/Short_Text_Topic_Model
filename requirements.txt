@@ -12,3 +12,4 @@ scipy
 six
 threadpoolctl
 tqdm
+torch

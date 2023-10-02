@@ -6,7 +6,7 @@ import gensim.corpora as corpora
 
 class NMF(AbstractModel):
 
-    def __init__(self, num_topics=100, chunksize=2000, passes=1, kappa=1.0, minimum_probability=0.01, w_max_iter=200,
+    def __init__(self, num_topics=10, chunksize=2000, passes=1, kappa=1.0, minimum_probability=0.01, w_max_iter=200,
                  w_stop_condition=0.0001, h_max_iter=50, h_stop_condition=0.001, eval_every=10, normalize=True,
                  random_state=None, use_partitions=True):
         """

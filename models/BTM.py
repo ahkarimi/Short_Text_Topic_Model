@@ -22,7 +22,7 @@ class BTM(AbstractModel):
     def __init__(self,
                 num_topics: int = 10,
                 iterations: int = 20,
-                num_top_words: int = 20,
+                num_top_words: int = 10,
                 alpha: float = 1,
                 beta: float = 0.01,
                 seed: int = 123

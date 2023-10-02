@@ -13,7 +13,7 @@ class CTM(AbstractModel):
 
     def __init__(self, num_topics=10, model_type='prodLDA', activation='softplus',
                  dropout=0.2, learn_priors=True, batch_size=64, lr=2e-3, momentum=0.99,
-                 solver='adam', num_epochs=100, reduce_on_plateau=False, prior_mean=0.0,
+                 solver='adam', num_epochs=10, reduce_on_plateau=False, prior_mean=0.0,
                  prior_variance=None, num_layers=2, num_neurons=100, use_partitions=True, num_samples=10,
                  inference_type="zeroshot", bert_path="", bert_model="m3hrdadfi/bert-zwnj-wnli-mean-tokens"):
         """

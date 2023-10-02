@@ -13,7 +13,7 @@ class LDA(AbstractModel):
     use_partitions = True
     update_with_test = False
 
-    def __init__(self, num_topics=100, distributed=False, chunksize=2000, passes=1, update_every=1, alpha="symmetric",
+    def __init__(self, num_topics=10, distributed=False, chunksize=2000, passes=1, update_every=1, alpha="symmetric",
                  eta=None, decay=0.5, offset=1.0, eval_every=10, iterations=50, gamma_threshold=0.001,
                  random_state=None):
         """
