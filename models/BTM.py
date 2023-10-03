@@ -1,10 +1,8 @@
 from sklearn.metrics import normalized_mutual_info_score
 from models.model import AbstractModel
-from tools.Dataset import Dataset
 import numpy as np
 import pandas as pd
 import bitermplus as btm
-import argparse
 import pickle
 
 
@@ -48,6 +46,7 @@ class BTM(AbstractModel):
         self.hyperparameters['seed'] = seed
         self.model = None
         self.vocab = None
+        self.probs = None
 
 
     def hyperparameters_info(self):
@@ -77,24 +76,45 @@ class BTM(AbstractModel):
             hyperparameters = {}
         self.hyperparameters.update(hyperparameters)
 
-        ######################### Need Dataset.texts
+        
+        corpus = dataset.train_corpus + dataset.test_corpus
+        
 
         # Obtaining terms frequency in a sparse matrix and corpus vocabulary
-        X, vocabulary, vocab_dict = btm.get_words_freqs(Dataset.texts)
+        X, vocabulary, vocab_dict = btm.get_words_freqs(corpus)
 
         # Vectorizing documents
-        docs_vec = btm.get_vectorized_docs(Dataset.texts, vocabulary)
+        docs_vec = btm.get_vectorized_docs(corpus, vocabulary)
+
+        docs_lens = list(map(len, docs_vec))
+
         # Generating biterms
         biterms = btm.get_biterms(docs_vec)
 
+
+
+
         # Initializing and running model
-        model = btm.BTM(X, vocabulary, seed=12321, T=11, M=10, alpha=50/8, beta=0.01)
-        model.fit(biterms, iterations=20)
+        model = btm.BTM(X, 
+                        vocabulary, 
+                        seed=12321, 
+                        T=self.hyperparameters['num_topics'], 
+                        M=10, 
+                        alpha=self.hyperparameters['alpha'], 
+                        beta=self.hyperparameters['beta'])
+        model.fit(biterms, 
+                  iterations=self.hyperparameters['iterations'])
 
         #Now, we will calculate documents vs topics probability matrix (make an inference).
         p_zd = model.transform(docs_vec)
 
+        # Get index of max probability for each document
+        top_prob = [np.argmax(i) for i in p_zd]
+        self.probs = top_prob
+
         self.model = model
+
+        return self._get_topics_words()
 
 
     def _select_words(self, topic_id: int, words_num):
@@ -105,11 +125,11 @@ class BTM(AbstractModel):
         return result
 
 
-    def _get_topics_words(self, words_num=20):
+    def _get_topics_words(self, words_num=10):
         topics_num = self.model.topics_num_
         topics_idx = np.arange(topics_num)
         top_words_btm = pd.concat(map(lambda x: self._select_words(x, words_num), topics_idx), axis=1)
-        return top_words_btm
+        return top_words_btm.to_json()
 
 
 
