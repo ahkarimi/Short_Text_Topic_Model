@@ -89,10 +89,7 @@ async def train_models(train_request: TrainRequest):
             lda = LDA.LDA(num_topics=train_request.hyperparameters.get("num_topics", 10),
                       iterations=train_request.hyperparameters.get("iterations", 5))
             lda_result = lda.train_model(dataset, hyperparams=None, top_words=10)
-            print(type(lda_result))
-            print(lda_result)
             json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in lda_result.items()}
-            
             training_results["LDA"] = json.dumps(json_data)
 
 
@@ -108,7 +105,8 @@ async def train_models(train_request: TrainRequest):
             # Example: Train an NMF model
             nmf = NMF.NMF(num_topics=train_request.hyperparameters.get("num_topics", 10))
             nmf_result = nmf.train_model(dataset)
-            training_results["NMF"] = nmf_result
+            json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in nmf_result.items()}
+            training_results["NMF"] = json.dumps(json_data)
         
         elif model_name == "BTM":
             # Example: Train an NMF model
