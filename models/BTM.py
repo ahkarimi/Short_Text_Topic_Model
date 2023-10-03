@@ -80,7 +80,7 @@ class BTM(AbstractModel):
         ######################### Need Dataset.texts
 
         # Obtaining terms frequency in a sparse matrix and corpus vocabulary
-        X, vocabulary, vocab_dict = btm.get_words_freqs()
+        X, vocabulary, vocab_dict = btm.get_words_freqs(Dataset.texts)
 
         # Vectorizing documents
         docs_vec = btm.get_vectorized_docs(Dataset.texts, vocabulary)
