@@ -89,7 +89,8 @@ async def train_models(train_request: TrainRequest):
             lda = LDA.LDA(num_topics=train_request.hyperparameters.get("num_topics", 10),
                       iterations=train_request.hyperparameters.get("iterations", 5))
             lda_result = lda.train_model(dataset, hyperparams=None, top_words=10)
-            json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in lda_result.items()}
+            # json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in lda_result.items()}
+            json_data = lda_result['topics']
             training_results["LDA"] = json.dumps(json_data)
 
 
@@ -99,14 +100,16 @@ async def train_models(train_request: TrainRequest):
                       num_epochs=train_request.hyperparameters.get("epoch", 5),
                       bert_model=train_request.hyperparameters.get("bert_model", "m3hrdadfi/bert-zwnj-wnli-mean-tokens"))
             ctm_result = ctm.train_model(dataset)
-            json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in ctm_result.items()}
+            #json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in ctm_result.items()}
+            json_data = ctm_result['topics']
             training_results["CTM"] = json.dumps(json_data)
 
         elif model_name == "NMF":
             # Example: Train an NMF model
             nmf = NMF.NMF(num_topics=train_request.hyperparameters.get("num_topics", 10))
             nmf_result = nmf.train_model(dataset)
-            json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in nmf_result.items()}
+            # json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in nmf_result.items()}
+            json_data = nmf_result['topics']
             training_results["NMF"] = json.dumps(json_data)
         
         elif model_name == "BTM":
