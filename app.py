@@ -93,7 +93,7 @@ async def train_models(train_request: TrainRequest):
                       iterations=train_request.hyperparameters.get("iterations", 5))
             lda_result = lda.train_model(dataset, hyperparams=None, top_words=10)
             # json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in lda_result.items()}
-            json_data = lda_result['topics']
+            json_data = lda_result['Topics']
             training_results["LDA"] = json.dumps(json_data)
 
 
