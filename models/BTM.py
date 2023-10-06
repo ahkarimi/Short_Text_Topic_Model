@@ -3,8 +3,11 @@ from models.model import AbstractModel
 import numpy as np
 import pandas as pd
 import bitermplus as btm
-import pickle
-
+import nltk
+nltk.download()
+from nltk.tokenize import  word_tokenize
+from tmtoolkit.topicmod.evaluate import metric_coherence_gensim
+from sklearn.metrics import cluster
 
 
 class BTM(AbstractModel):
@@ -75,10 +78,9 @@ class BTM(AbstractModel):
         if hyperparameters is None:
             hyperparameters = {}
         self.hyperparameters.update(hyperparameters)
-
         
         corpus = dataset.train_corpus + dataset.test_corpus
-        
+        labels = dataset.train_labels + dataset.test_labels
 
         # Obtaining terms frequency in a sparse matrix and corpus vocabulary
         X, vocabulary, vocab_dict = btm.get_words_freqs(corpus)
@@ -91,9 +93,6 @@ class BTM(AbstractModel):
         # Generating biterms
         biterms = btm.get_biterms(docs_vec)
 
-
-
-
         # Initializing and running model
         model = btm.BTM(X, 
                         vocabulary, 
@@ -104,6 +103,7 @@ class BTM(AbstractModel):
                         beta=self.hyperparameters['beta'])
         model.fit(biterms, 
                   iterations=self.hyperparameters['iterations'])
+        self.model = model
 
         #Now, we will calculate documents vs topics probability matrix (make an inference).
         p_zd = model.transform(docs_vec)
@@ -112,9 +112,16 @@ class BTM(AbstractModel):
         top_prob = [np.argmax(i) for i in p_zd]
         self.probs = top_prob
 
-        self.model = model
+        coherence = self._calculate_coherence(corpus, X, top_n=self.hyperparameters['num_top_words'])
+        print("coherence: ", coherence)
+        
+        nmi = self._calculate_nmi(labels, top_prob)
+        print("nmi: ", nmi)
+        
+        purity = self._calclate_purity(labels, top_prob)
+        print("purity", purity)
 
-        return self._get_topics_words()
+        return self._get_topics_words(words_num=self.hyperparameters['num_top_words'])
 
 
     def _select_words(self, topic_id: int, words_num):
@@ -129,10 +136,30 @@ class BTM(AbstractModel):
         topics_num = self.model.topics_num_
         topics_idx = np.arange(topics_num)
         top_words_btm = pd.concat(map(lambda x: self._select_words(x, words_num), topics_idx), axis=1)
-        return top_words_btm.to_json()
+        return top_words_btm.values.tolist()
 
 
+    def _calculate_coherence(self, texts, X, top_n):
+        tt = [word_tokenize(i) for i in texts]
+        return metric_coherence_gensim(
+                measure='c_v',
+                top_n=top_n,
+                topic_word_distrib=self.model.matrix_topics_words_,
+                dtm=X,
+                vocab=self.model.vocabulary_,
+                return_mean = True,
+                texts=tt)
 
+
+    def _calculate_nmi(self, labels, top_prob):
+        return normalized_mutual_info_score(labels, top_prob)
+
+
+    def _calclate_purity(self, labels, top_prob):
+        # compute contingency matrix (also called confusion matrix)
+        contingency_matrix = cluster.contingency_matrix(labels, top_prob)
+        return np.sum(np.amax(contingency_matrix, axis=0)) / np.sum(contingency_matrix)
+    
 
 # def __save_pickle(file, path):
 #     with open(path, 'wb') as handle:

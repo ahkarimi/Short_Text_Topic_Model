@@ -1,4 +1,6 @@
 snscrape
+nltk
+tmtoolkit
 hazm
 bitermplus
 Cython
