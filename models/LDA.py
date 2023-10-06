@@ -174,7 +174,7 @@ class LDA(AbstractModel):
         if self.id2word is None:
             _corpus = dataset.train_corpus + dataset.test_corpus
             self.id2word = corpora.Dictionary([doc.split() for doc in _corpus])
-            print("\n\nID2WORD\n", self.id2word)
+
 
         if self.id_corpus is None:
             self.id_corpus = [self.id2word.doc2bow(document.split())
@@ -243,7 +243,7 @@ class LDA(AbstractModel):
                     test_document_topic_matrix.append(document_topics)
                 #result["test-topic-document-matrix"] = np.array(test_document_topic_matrix).transpose()
                 
-        print("\n\id_corpus\n", self.id_corpus)
+
         # result['NMI'] = self._calculate_nmi(labels, top_prob)
         # result['Coherence'] = self._calculate_coherence(train_corpus, self.id_corpus, top_n=top_words)
         # result['Purity'] = self._calclate_purity(labels, top_prob)
@@ -290,7 +290,7 @@ class LDA(AbstractModel):
                 top_n=top_n,
                 topic_word_distrib=self.trained_model.get_topics(),
                 dtm=X,
-                vocab=self.id2word,
+                vocab=self.id2word.token2id.keys(),
                 return_mean = True,
                 texts=tt)
 
