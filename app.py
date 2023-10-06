@@ -99,7 +99,8 @@ async def train_models(train_request: TrainRequest):
                       num_epochs=train_request.hyperparameters.get("epoch", 5),
                       bert_model=train_request.hyperparameters.get("bert_model", "m3hrdadfi/bert-zwnj-wnli-mean-tokens"))
             ctm_result = ctm.train_model(dataset)
-            training_results["CTM"] = ctm_result
+            json_data = {key: value if isinstance(value, list) else [array.tolist() for array in value] for key, value in ctm_result.items()}
+            training_results["CTM"] = json.dumps(json_data)
 
         elif model_name == "NMF":
             # Example: Train an NMF model
