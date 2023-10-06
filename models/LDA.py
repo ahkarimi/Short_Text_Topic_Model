@@ -2,15 +2,17 @@ from models.model import AbstractModel
 import numpy as np
 from gensim.models import ldamodel
 import gensim.corpora as corpora
-#import octis.configuration.citations as citations
-#import octis.configuration.defaults as defaults
 
+from sklearn.metrics import normalized_mutual_info_score
+from nltk.tokenize import  word_tokenize
+from tmtoolkit.topicmod.evaluate import metric_coherence_gensim
+from sklearn.metrics import cluster
 
 class LDA(AbstractModel):
 
     id2word = None
     id_corpus = None
-    use_partitions = True
+    use_partitions = False
     update_with_test = False
 
     def __init__(self, num_topics=10, distributed=False, chunksize=2000, passes=1, update_every=1, alpha="symmetric",
@@ -167,10 +169,12 @@ class LDA(AbstractModel):
             test_corpus = dataset.test_corpus
         else:
             train_corpus = dataset.train_corpus + dataset.test_corpus
+            labels = dataset.train_labels + dataset.test_labels
 
         if self.id2word is None:
             _corpus = dataset.train_corpus + dataset.test_corpus
             self.id2word = corpora.Dictionary([doc.split() for doc in _corpus])
+            print("\n\nID2WORD\n", self.id2word)
 
         if self.id_corpus is None:
             self.id_corpus = [self.id2word.doc2bow(document.split())
@@ -194,17 +198,18 @@ class LDA(AbstractModel):
 
         result = {}
 
-        result["topic-word-matrix"] = self.trained_model.get_topics()
+        #result["topic-word-matrix"] = self.trained_model.get_topics()
+        topic_word_matrix = self.trained_model.get_topics()
 
         if top_words > 0:
             topics_output = []
-            for topic in result["topic-word-matrix"]:
+            for topic in topic_word_matrix:
                 top_k = np.argsort(topic)[-top_words:]
                 top_k_words = list(reversed([self.id2word[i] for i in top_k]))
                 topics_output.append(top_k_words)
-            result["topics"] = topics_output
+            result["Topics"] = topics_output
 
-        result["topic-document-matrix"] = self._get_topic_document_matrix()
+        #result["topic-document-matrix"] = self._get_topic_document_matrix()
 
         if self.use_partitions:
             new_corpus = [self.id2word.doc2bow(document.split()) for document in test_corpus]
@@ -212,18 +217,19 @@ class LDA(AbstractModel):
                 self.trained_model.update(new_corpus)
                 self.id_corpus.extend(new_corpus)
 
-                result["test-topic-word-matrix"] = self.trained_model.get_topics()
+                #result["test-topic-word-matrix"] = self.trained_model.get_topics()
+                test_topic_word_matrix = self.trained_model.get_topics()
 
                 if top_words > 0:
                     topics_output = []
-                    for topic in result["test-topic-word-matrix"]:
+                    for topic in test_topic_word_matrix:
                         top_k = np.argsort(topic)[-top_words:]
                         top_k_words = list(
                             reversed([self.id2word[i] for i in top_k]))
                         topics_output.append(top_k_words)
                     result["test-topics"] = topics_output
 
-                result["test-topic-document-matrix"] = self._get_topic_document_matrix()
+                #result["test-topic-document-matrix"] = self._get_topic_document_matrix()
 
             else:
                 test_document_topic_matrix = []
@@ -235,8 +241,13 @@ class LDA(AbstractModel):
                         document_topics[single_tuple[0]] = single_tuple[1]
 
                     test_document_topic_matrix.append(document_topics)
-                result["test-topic-document-matrix"] = np.array(
-                    test_document_topic_matrix).transpose()
+                #result["test-topic-document-matrix"] = np.array(test_document_topic_matrix).transpose()
+                
+        print("\n\id_corpus\n", self.id_corpus)
+        # result['NMI'] = self._calculate_nmi(labels, top_prob)
+        # result['Coherence'] = self._calculate_coherence(train_corpus, self.id_corpus, top_n=top_words)
+        # result['Purity'] = self._calclate_purity(labels, top_prob)
+
         return result
 
     def _get_topics_words(self, topk):
@@ -271,3 +282,25 @@ class LDA(AbstractModel):
             for topic_tuple in document:
                 topic_document[topic_tuple[0]][ndoc] = topic_tuple[1]
         return topic_document
+    
+    def _calculate_coherence(self, texts, X, top_n):
+        tt = [word_tokenize(i) for i in texts]
+        return metric_coherence_gensim(
+                measure='c_v',
+                top_n=top_n,
+                topic_word_distrib=self.trained_model.get_topics(),
+                dtm=X,
+                vocab=self.id2word,
+                return_mean = True,
+                texts=tt)
+
+
+    def _calculate_nmi(self, labels, top_prob):
+        return normalized_mutual_info_score(labels, top_prob)
+
+
+    def _calclate_purity(self, labels, top_prob):
+        # compute contingency matrix (also called confusion matrix)
+        contingency_matrix = cluster.contingency_matrix(labels, top_prob)
+        return np.sum(np.amax(contingency_matrix, axis=0)) / np.sum(contingency_matrix)
+    

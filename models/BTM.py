@@ -112,16 +112,13 @@ class BTM(AbstractModel):
         top_prob = [np.argmax(i) for i in p_zd]
         self.probs = top_prob
 
-        coherence = self._calculate_coherence(corpus, X, top_n=self.hyperparameters['num_top_words'])
-        print("coherence: ", coherence)
-        
-        nmi = self._calculate_nmi(labels, top_prob)
-        print("nmi: ", nmi)
-        
-        purity = self._calclate_purity(labels, top_prob)
-        print("purity", purity)
+        results = {}
+        results['NMI'] = self._calculate_nmi(labels, top_prob)
+        results['Coherence'] = self._calculate_coherence(corpus, X, top_n=self.hyperparameters['num_top_words'])
+        results['Purity'] = self._calclate_purity(labels, top_prob)
+        results['Topics'] = self._get_topics_words(words_num=self.hyperparameters['num_top_words']) 
 
-        return self._get_topics_words(words_num=self.hyperparameters['num_top_words'])
+        return results
 
 
     def _select_words(self, topic_id: int, words_num):
