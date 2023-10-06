@@ -7,6 +7,9 @@ from models import LDA, CTM, BTM, NMF
 import subprocess
 import os
 import json 
+import nltk 
+nltk.download('punkt')
+
 
 app = FastAPI()
 

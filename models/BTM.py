@@ -3,8 +3,6 @@ from models.model import AbstractModel
 import numpy as np
 import pandas as pd
 import bitermplus as btm
-import nltk
-nltk.download()
 from nltk.tokenize import  word_tokenize
 from tmtoolkit.topicmod.evaluate import metric_coherence_gensim
 from sklearn.metrics import cluster
